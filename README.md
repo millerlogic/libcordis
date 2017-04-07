@@ -33,13 +33,13 @@ The protocol between the app and the interface is ultimately up to the plugin, t
 
 This is the API to be used by the application in order to load plugins. Include ```libcordis.h```
 
-```
+```c
 int libcordis_init(int flags)
 ```
 Initialize libcordis. Set flags to 0.
 
-```
-libcordis_open(const char *path, int flags)
+```c
+int libcordis_open(const char *path, int flags)
 ```
 Open a libcordis plugin. The path is a libcordis plugin path, which are the keys in the libcordis.interfaces map from the manifest file. The path can also be a local file system path to open a file.
 Flags:
@@ -59,14 +59,14 @@ LIBCORDIS_OPEN_NOT_FOUND (-ENOENT) - path not found.
 ```
 If a file descriptor is returned, it must be closed when no longer in use.
 
-```
+```c
 void libcordis_cleanup()
 ```
 Attempt to clean up unused interfaces and libraries. Can be called at any point, it will not clean anything still in use.
 If a library should not ever be unloaded for some reason, no_unload can be set to true in the interface definition.
 
-```
-size_t libcordis_get_path(int which, char* buf, size_t buflen)
+```c
+size_t libcordis_get_path(int which, char *buf, size_t buflen)
 ```
 Helper function to get various useful paths for the platform.
 which:
@@ -87,7 +87,7 @@ Returns number of bytes in the returned string; otherwise the number of bytes ne
 
 This is the API in the plugin shared object, to be defined by plugin implementors.
 
-```
+```c
 int name_interface(int fd, int flags)
 ```
 The function for an interface is named *name*_interface where *name* is the name of the interface. In order to load this interface, this name must be specified as the interface in the interface definition.
@@ -95,7 +95,7 @@ The fd parameter is a file descriptor for plugin communications, line-delimited 
 
 The return value from the function indicates how the file descriptor is to be used. Return -1 if you have encountered an error and closed the fd. Return 0 if you are doing all plugin communication during this function call and then close fd before returning, you are free to do this as it will be running in a separate thread. Otherwise return 1 if you are going to handle the interface yourself asynchronously, this allows the thread to be released and you can manage the file descriptors manually. If returning 1, you should also implement the count function below.
 
-```
+```c
 int name_count()
 ```
 This function is named *name*_count where *name* is the name of the interface. This function is not required unless you are returning 1 from name_interface().
