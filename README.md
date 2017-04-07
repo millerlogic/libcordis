@@ -21,12 +21,13 @@ The plugins are defined in a manifest named *appname*.manifest.json, loaded from
 ```
 
 * libcordis: the main libcordis configuration
-* interfaces: a map of plugins. The keys are the libcordis paths to open the plugin, this can be anything as long as nothing conflicts, but /interfaces/*interface-name* is recommended. The values are interface definitions, explained next.
+* interfaces: a map of plugins. The keys are the libcordis paths to open the plugin, this can be anything as long as nothing conflicts, though /interfaces/*interface-name* is recommended. The values are interface definitions, explained next.
 * *interface definition*
   * library: the path to the plugin's shared object. This is relative to the app's interfaces directory, lib directory, or bin directory, depending on which exist.
   * interface: is the interface in the shared object to load, as explained in the below plugin API.
 
 An app opens interfaces to read and write in order to communicate with the plugin.
+The protocol between the app and the interface is ultimately up to the plugin, though line-delimited JSON is recommended.
 
 ## libcordis C API
 
