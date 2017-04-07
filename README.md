@@ -32,10 +32,6 @@ An app opens interfaces to read and write in order to communicate with the plugi
 
 This is the API to be used by the application in order to load plugins. Include ```libcordis.h```
 
-## Plugin C API
-
-This is the API in the plugin shared object. *TBD*
-
 ```
 int libcordis_init(int flags)
 ```
@@ -85,6 +81,10 @@ LIBCORDIS_PATH_CACHE - cache dir, such as ~/.cache
 buf is the buffer to copy the path into.
 buflen is the length of bytes at buf.
 Returns number of bytes in the returned string; otherwise the number of bytes needed to hold the path. 0 is returned on failure.
+
+## Plugin C API
+
+This is the API in the plugin shared object. *TBD*
 
 ## Build
 
