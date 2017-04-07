@@ -82,6 +82,7 @@ LIBCORDIS_PATH_CACHE - cache dir, such as ~/.cache
 buf is the buffer to copy the path into.
 buflen is the length of bytes at buf.
 Returns number of bytes in the returned string; otherwise the number of bytes needed to hold the path. 0 is returned on failure.
+Upon success, the returned path is always an absolute path.
 
 ## Plugin C API
 
@@ -100,6 +101,16 @@ int name_count()
 ```
 This function is named *name*_count where *name* is the name of the interface. This function is not required unless you are returning 1 from name_interface().
 This function will be called periodically in order to get a count of currently open file descriptors for this interface, in order to do proper bookkeeping.
+
+## Other Details
+
+* Line-delimited JSON in UTF-8 is the preferred protocol across plugin file descriptors. For example, write a line of JSON ```{"cmd": "stuff"}```\n and get a response. This means line characters cannot be in the JSON itself, unless escaped in strings. Ideally the plugin should be able to handle reading and writing at any time such that the app won't get stuck writing when it needs to be reading.
+
+* If there are "holes" or "overrides" in the paths, such as "/interfaces/foo/bar/baz" and "/interfaces/foo", this may succeed or fail. It is best to avoid this situation as much as possible.
+
+* Interface paths have precedence over other paths, currently. In the future there may be other factors and loaders.
+
+* There should be no dependencies between the plugin and the application besides the plugin API. No assumptions should be made about the context of the plugin's execution. This is where flexibility comes, we should be able to use plugins in different processes, and even on different machines.
 
 ## Example
 
