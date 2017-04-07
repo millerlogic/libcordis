@@ -85,7 +85,7 @@ Returns number of bytes in the returned string; otherwise the number of bytes ne
 
 ## Plugin C API
 
-This is the API in the plugin shared object.
+This is the API in the plugin shared object, to be defined by plugin implementors.
 
 ```
 int name_interface(int fd, int flags)
