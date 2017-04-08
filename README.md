@@ -112,6 +112,8 @@ This function will be called periodically in order to get a count of currently o
 
 * There should be no dependencies between the plugin and the application besides the plugin API. No assumptions should be made about the context of the plugin's execution. This is where flexibility comes, we should be able to use plugins in different processes, and even on different machines.
 
+* File descriptors provided by libcordis: the type is not defined and should not be relied upon; will have close-on-exec (CLOEXEC). File descriptors created by the app or plugins should also have close-on-exec (CLOEXEC), with the exception of stdin, stdout and stderr.
+
 ## Example
 
 *coming*
