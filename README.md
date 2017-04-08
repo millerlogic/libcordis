@@ -41,7 +41,7 @@ Initialize libcordis. Set flags to 0.
 ```c
 int libcordis_open(const char *path, int flags)
 ```
-Open a libcordis plugin. The path is a libcordis plugin path, which are the keys in the libcordis.interfaces map from the manifest file. The path can also be a local file system path to open a file.
+Open a libcordis plugin. The path is a libcordis plugin path, which are the keys in the libcordis.interfaces map from the manifest file. The path can also be a local file system path to open a file. If the local file system path is a socket (unix domain socket) it will attempt to connect.
 Flags:
 ```
 LIBCORDIS_OPEN_WRITE - request write permission.
