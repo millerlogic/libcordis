@@ -42,6 +42,8 @@ import (
 #define _LIBCORDIS_OPEN_WANT     0x0F00
 #define LIBCORDIS_OPEN_INTERFACE 0x0100
 #define LIBCORDIS_OPEN_FS        0x0200
+
+typedef const char *_const_string;
 */
 import "C"
 
@@ -391,7 +393,7 @@ func open(path string, flags int) int {
 // Errors are: one of LIBCORDIS_OPEN_ERROR_*, or a negative errno value.
 // Returns LIBCORDIS_OPEN_ERROR_WRONGKIND if a specific kind is requested but does not satisfy it.
 //export libcordis_open
-func libcordis_open(cpath *C.char, flags C.int) C.int {
+func libcordis_open(cpath C._const_string, flags C.int) C.int {
 	if !isInit() {
 		return C.LIBCORDIS_OPEN_ERROR_INIT
 	}

@@ -37,6 +37,8 @@
 #define LIBCORDIS_OPEN_INTERFACE 0x0100
 #define LIBCORDIS_OPEN_FS        0x0200
 
+typedef const char *_const_string;
+
 #line 1 "cgo-generated-wrapper"
 
 
@@ -97,7 +99,7 @@ extern int libcordis_init(int p0);
 // Errors are: one of LIBCORDIS_OPEN_ERROR_*, or a negative errno value.
 // Returns LIBCORDIS_OPEN_ERROR_WRONGKIND if a specific kind is requested but does not satisfy it.
 
-extern int libcordis_open(char* p0, int p1);
+extern int libcordis_open(_const_string p0, int p1);
 
 // Unloads any interfaces and libraries that are no longer in use.
 // An interface is considered not in use if it has no clients.
