@@ -104,7 +104,7 @@ This function will be called periodically in order to get a count of currently o
 
 ## Other Details
 
-* Line-delimited JSON in UTF-8 is the preferred protocol across plugin file descriptors. For example, write a line of JSON ```{"cmd": "stuff"}```\n and get a response. This means line characters cannot be in the JSON itself, unless escaped in strings. Ideally the plugin should be able to handle reading and writing at any time such that the app won't get stuck writing when it needs to be reading.
+* Line-delimited JSON in UTF-8 is the preferred protocol across plugin file descriptors. For example, write a line of JSON ```{"cmd": "stuff"}```\n and get a response. This means line characters cannot be in the JSON itself, unless escaped in strings. Ideally the plugin should be able to handle reading and writing at any time such that the app won't get stuck writing when it needs to be reading. If an ```id``` field is present in the top-level object, it should be copied to the response as-is, similar to JSON-RPC.
 
 * If there are "holes" or "overrides" in the paths, such as "/interfaces/foo/bar/baz" and "/interfaces/foo", this may succeed or fail. It is best to avoid this situation as much as possible.
 
