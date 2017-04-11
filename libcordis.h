@@ -5,7 +5,7 @@
 /* Start of preamble from import "C" comments.  */
 
 
-#line 15 "/home/ndev/workspace/go/src/github.com/millerlogic/libcordis/libcordis.go"
+#line 17 "/home/ndev/workspace/go/src/github.com/millerlogic/libcordis/libcordis.go"
 
 
 
@@ -22,15 +22,23 @@
 #define LIBCORDIS_PATH_DATA 6
 #define LIBCORDIS_PATH_CACHE 7
 
-#define LIBCORDIS_INIT_OK 0
-#define LIBCORDIS_INIT_ERROR_MANIFEST_LOAD 1
-#define LIBCORDIS_INIT_ERROR_MANIFEST_DATA 2
+#define LIBCORDIS_INIT_LOAD_FILE     0x0001 // Load from file path.
+#define LIBCORDIS_INIT_LOAD_STRING   0x0002 // Load from direct contents.
+#define LIBCORDIS_INIT_JSON_MANIFEST 0x0010 // Generic manifest file, look for the "libcordis" object.
+#define LIBCORDIS_INIT_JSON_MAIN     0x0020 // This is already the main "libcordis" object.
+
 
 #define LIBCORDIS_OPEN_NOT_FOUND (-ENOENT)
-#define LIBCORDIS_OPEN_ERROR_INIT (-65537)
-#define LIBCORDIS_OPEN_ERROR_WRONGKIND (-65538)
-#define LIBCORDIS_OPEN_ERROR_UNABLE_LOAD (-65539)
-#define LIBCORDIS_OPEN_ERROR_NEED_WRITE (-65540)
+
+#define LIBCORDIS_OPEN_ERROR_INIT (-70001)
+#define LIBCORDIS_OPEN_ERROR_WRONGKIND (-70002)
+#define LIBCORDIS_OPEN_ERROR_UNABLE_LOAD (-70003)
+#define LIBCORDIS_OPEN_ERROR_NEED_WRITE (-70004)
+
+#define LIBCORDIS_INIT_ERROR_FLAGS (-80001)
+#define LIBCORDIS_INIT_ERROR_MANIFEST_LOAD (-80002)
+#define LIBCORDIS_INIT_ERROR_MANIFEST_DATA (-80003)
+#define LIBCORDIS_INIT_ERROR_INIT (-80004)
 
 #define LIBCORDIS_OPEN_WRITE     0x0001
 #define _LIBCORDIS_OPEN_WANT     0x0F00
@@ -94,6 +102,8 @@ extern size_t libcordis_get_path(int p0, char* p1, size_t p2);
 // Returns 0 on success, or a LIBCORDIS_INIT_ERROR_* value.
 
 extern int libcordis_init(int p0);
+
+extern int libcordis_init_from(int p0, _const_string p1);
 
 // Returns file descriptor on success, or a negative error value.
 // Errors are: one of LIBCORDIS_OPEN_ERROR_*, or a negative errno value.

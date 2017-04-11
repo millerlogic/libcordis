@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net"
 	"os"
 	"path"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -28,15 +30,23 @@ import (
 #define LIBCORDIS_PATH_DATA 6
 #define LIBCORDIS_PATH_CACHE 7
 
-#define LIBCORDIS_INIT_OK 0
-#define LIBCORDIS_INIT_ERROR_MANIFEST_LOAD 1
-#define LIBCORDIS_INIT_ERROR_MANIFEST_DATA 2
+#define LIBCORDIS_INIT_LOAD_FILE     0x0001 // Load from file path.
+#define LIBCORDIS_INIT_LOAD_STRING   0x0002 // Load from direct contents.
+#define LIBCORDIS_INIT_JSON_MANIFEST 0x0010 // Generic manifest file, look for the "libcordis" object.
+#define LIBCORDIS_INIT_JSON_MAIN     0x0020 // This is already the main "libcordis" object.
+
 
 #define LIBCORDIS_OPEN_NOT_FOUND (-ENOENT)
-#define LIBCORDIS_OPEN_ERROR_INIT (-65537)
-#define LIBCORDIS_OPEN_ERROR_WRONGKIND (-65538)
-#define LIBCORDIS_OPEN_ERROR_UNABLE_LOAD (-65539)
-#define LIBCORDIS_OPEN_ERROR_NEED_WRITE (-65540)
+
+#define LIBCORDIS_OPEN_ERROR_INIT (-70001)
+#define LIBCORDIS_OPEN_ERROR_WRONGKIND (-70002)
+#define LIBCORDIS_OPEN_ERROR_UNABLE_LOAD (-70003)
+#define LIBCORDIS_OPEN_ERROR_NEED_WRITE (-70004)
+
+#define LIBCORDIS_INIT_ERROR_FLAGS (-80001)
+#define LIBCORDIS_INIT_ERROR_MANIFEST_LOAD (-80002)
+#define LIBCORDIS_INIT_ERROR_MANIFEST_DATA (-80003)
+#define LIBCORDIS_INIT_ERROR_INIT (-80004)
 
 #define LIBCORDIS_OPEN_WRITE     0x0001
 #define _LIBCORDIS_OPEN_WANT     0x0F00
@@ -127,10 +137,10 @@ func isInit() bool {
 	return interfaces != nil
 }
 
-// Set flags to 0.
-// Returns 0 on success, or a LIBCORDIS_INIT_ERROR_* value.
-//export libcordis_init
-func libcordis_init(flags C.int) C.int {
+func initLibFrom(flags int, arg string) int {
+	if isInit() {
+		return C.LIBCORDIS_INIT_ERROR_INIT
+	}
 	// Interfaces dir:
 	appdir := paths.GetPathApp()
 	ifdir := path.Join(appdir, "../interfaces")
@@ -143,35 +153,78 @@ func libcordis_init(flags C.int) C.int {
 		interfacesDir = appdir
 	}
 	// Manifest:
-	manifestpath := paths.GetPathExe() + ".manifest.json"
-	fmanifest, err := os.Open(manifestpath)
-	if err != nil {
-		return C.LIBCORDIS_INIT_ERROR_MANIFEST_LOAD
+	var manifestStream io.Reader
+	if (flags & C.LIBCORDIS_INIT_LOAD_FILE) != 0 {
+		manifestpath := arg
+		if manifestpath == "" {
+			manifestpath = paths.GetPathExe() + ".manifest.json"
+		}
+		fmanifest, err := os.Open(manifestpath)
+		if err != nil {
+			return C.LIBCORDIS_INIT_ERROR_MANIFEST_LOAD
+		}
+		defer fmanifest.Close()
+		manifestStream = fmanifest
+	} else if (flags & C.LIBCORDIS_INIT_LOAD_STRING) != 0 {
+		manifestStream = strings.NewReader(arg)
+	} else {
+		return C.LIBCORDIS_INIT_ERROR_FLAGS
 	}
-	defer fmanifest.Close()
-	var manifest Manifest
-	decodeErr := json.NewDecoder(fmanifest).Decode(&manifest)
-	if decodeErr != nil {
-		return C.LIBCORDIS_INIT_ERROR_MANIFEST_LOAD
+	var manifestLibcordis *ManifestLibcordis
+	if (flags & C.LIBCORDIS_INIT_JSON_MANIFEST) != 0 {
+		var manifest Manifest
+		decodeErr := json.NewDecoder(manifestStream).Decode(&manifest)
+		if decodeErr != nil {
+			return C.LIBCORDIS_INIT_ERROR_MANIFEST_LOAD
+		}
+		if manifest.Libcordis == nil {
+			return C.LIBCORDIS_INIT_ERROR_MANIFEST_DATA
+		}
+		manifestLibcordis = manifest.Libcordis
+	} else if (flags & C.LIBCORDIS_INIT_JSON_MAIN) != 0 {
+		var main ManifestLibcordis
+		decodeErr := json.NewDecoder(manifestStream).Decode(&main)
+		if decodeErr != nil {
+			return C.LIBCORDIS_INIT_ERROR_MANIFEST_LOAD
+		}
+		manifestLibcordis = &main
+	} else {
+		return C.LIBCORDIS_INIT_ERROR_FLAGS
 	}
 	// Validate:
-	if manifest.Libcordis == nil {
-		return C.LIBCORDIS_INIT_ERROR_MANIFEST_DATA
-	}
-	for lname, linfo := range manifest.Libcordis.Launch {
+	for lname, linfo := range manifestLibcordis.Launch {
 		if lname == "" || linfo.Run == "" {
 			return C.LIBCORDIS_INIT_ERROR_MANIFEST_DATA
 		}
 	}
-	for ldep, depinfo := range manifest.Libcordis.Interfaces {
+	for ldep, depinfo := range manifestLibcordis.Interfaces {
 		if ldep == "" || depinfo.Library == "" || depinfo.Interface == "" {
 			return C.LIBCORDIS_INIT_ERROR_MANIFEST_DATA
 		}
 	}
 	// Ok:
-	launch = manifest.Libcordis.Launch
-	interfaces = manifest.Libcordis.Interfaces
+	launch = manifestLibcordis.Launch
+	interfaces = manifestLibcordis.Interfaces
 	return 0
+}
+
+// Set flags to 0.
+// Returns 0 on success, or a LIBCORDIS_INIT_ERROR_* value.
+//export libcordis_init
+func libcordis_init(flags C.int) C.int {
+	if (flags & 0x00FF) != 0 {
+		return C.LIBCORDIS_INIT_ERROR_FLAGS
+	}
+	return C.int(initLibFrom(int(flags|C.LIBCORDIS_INIT_LOAD_FILE|C.LIBCORDIS_INIT_JSON_MANIFEST), ""))
+}
+
+//export libcordis_init_from
+func libcordis_init_from(flags C.int, arg C._const_string) C.int {
+	goarg := ""
+	if arg != nil {
+		goarg = C.GoString(arg)
+	}
+	return C.int(initLibFrom(int(flags), goarg))
 }
 
 func loadlib(path string) (uintptr, error) {
