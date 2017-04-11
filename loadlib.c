@@ -21,12 +21,12 @@ void _unloadlib(size_t hlib)
 }
 
 
-int _servelib(size_t hlib, const char *name, int sockfd)
+int _servelib(size_t hlib, const char *name, int sockfd, int flags, const char *data)
 {
-    int (*ifacefunc)(int sockfd, int flags) = dlsym((void*)hlib, name);
+    int (*ifacefunc)(int sockfd, int flags, const char *data) = dlsym((void*)hlib, name);
     if(!ifacefunc)
         return -2;
-    int ret = ifacefunc(sockfd, 0);
+    int ret = ifacefunc(sockfd, flags, data);
     if(ret == -2)
         return -1;
     return ret;

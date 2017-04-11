@@ -8,7 +8,7 @@ size_t _loadlib(const char *path);
 
 void _unloadlib(size_t hlib);
 
-int _servelib(size_t hlib, const char *name, int sockfd);
+int _servelib(size_t hlib, const char *name, int sockfd, int flags, const char *data);
 
 int _clientcount(size_t hlib, const char *name);
 

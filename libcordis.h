@@ -45,6 +45,8 @@
 #define LIBCORDIS_OPEN_INTERFACE 0x0100
 #define LIBCORDIS_OPEN_FS        0x0200
 
+#define LIBCORDIS_INTERFACE_JSON_DATA 0x0001
+
 typedef const char *_const_string;
 
 #line 1 "cgo-generated-wrapper"

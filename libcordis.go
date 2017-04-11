@@ -53,6 +53,8 @@ import (
 #define LIBCORDIS_OPEN_INTERFACE 0x0100
 #define LIBCORDIS_OPEN_FS        0x0200
 
+#define LIBCORDIS_INTERFACE_JSON_DATA 0x0001
+
 typedef const char *_const_string;
 */
 import "C"
@@ -111,10 +113,22 @@ func libcordis_get_path(which C.int, dest *C.char, destlen C.size_t) C.size_t {
 	return cstrbuf(path, dest, destlen)
 }
 
+type RawJSON []byte
+
+func (rj *RawJSON) UnmarshalJSON(data []byte) error {
+	*rj = data
+	return nil
+}
+
+func (rj *RawJSON) MarshalJSON() ([]byte, error) {
+	return *rj, nil
+}
+
 type ManifestInterface struct {
-	Library   string `json:"library"`
-	Interface string `json:"interface"`
-	NoUnload  bool   `json:"no_unload"`
+	Library   string   `json:"library"`
+	Interface string   `json:"interface"`
+	Data      *RawJSON `json:"data"`
+	NoUnload  bool     `json:"no_unload"`
 }
 
 type ManifestLaunch struct {
@@ -241,9 +255,17 @@ func unloadlib(hlib uintptr) {
 	C._unloadlib(C.size_t(hlib))
 }
 
-func servelib(hlib uintptr, name string, sockfd int) int {
+func servelib(hlib uintptr, name string, sockfd int, flags int, data *RawJSON) int {
 	cstr := C.CString(name)
-	ret := C._servelib(C.size_t(hlib), cstr, C.int(sockfd))
+	var cdata *C.char
+	if data != nil {
+		cdata = C.CString(string(*data))
+		flags |= C.LIBCORDIS_INTERFACE_JSON_DATA
+	}
+	ret := C._servelib(C.size_t(hlib), cstr, C.int(sockfd), C.int(flags), cdata)
+	if cdata != nil {
+		C.free(unsafe.Pointer(cdata))
+	}
 	C.free(unsafe.Pointer(cstr))
 	return int(ret)
 }
@@ -253,6 +275,10 @@ func clientcount(hlib uintptr, name string) int {
 	ret := C._clientcount(C.size_t(hlib), cstr)
 	C.free(unsafe.Pointer(cstr))
 	return int(ret)
+}
+
+func serveInterface(dep *Interface, sockfd int) int {
+	return servelib(dep.hlib, dep.Interface+"_interface", sockfd, 0, dep.Data)
 }
 
 type Interface struct {
@@ -348,7 +374,7 @@ func openInterface(path string, flags int) int {
 	}
 	atomic.AddUint32(&dep.refcount, 1)
 	go func() {
-		ret := servelib(dep.hlib, dep.Interface+"_interface", fds[0])
+		ret := serveInterface(dep, fds[0])
 		if ret == 1 {
 			atomic.StoreInt32(&dep.manual, 1)
 		}
