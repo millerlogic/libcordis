@@ -120,6 +120,14 @@ extern int libcordis_open(_const_string p0, int p1);
 
 extern int libcordis_cleanup();
 
+// Call before fork.
+
+extern void libcordis_before_fork();
+
+// Call after a fork in the parent.
+
+extern void libcordis_after_fork();
+
 #ifdef __cplusplus
 }
 #endif

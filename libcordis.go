@@ -520,5 +520,17 @@ func libcordis_cleanup() C.int {
 	return C.int(cleanup())
 }
 
+// Call before fork.
+//export libcordis_before_fork
+func libcordis_before_fork() {
+	syscall.ForkLock.Lock()
+}
+
+// Call after a fork in the parent.
+//export libcordis_after_fork
+func libcordis_after_fork() {
+	syscall.ForkLock.Unlock()
+}
+
 func main() {
 }
