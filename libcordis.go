@@ -381,6 +381,7 @@ func openInterface(path string, flags int) int {
 		atomic.AddUint32(&dep.refcount, ^uint32(0)) // decrement
 		if ret < 0 {
 			if ret == -2 {
+				syscall.Close(fds[0])
 				os.Stderr.WriteString("Interface '" + dep.Interface + "' not found\n")
 			} else {
 				os.Stderr.WriteString("Interface '" + dep.Interface + "' returned a failure\n")
